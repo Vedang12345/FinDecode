@@ -22,12 +22,9 @@ public class GalaxyTeleOp extends OpMode
     private Gamepad currentGamepad2 = new Gamepad();
     private Gamepad previousGamepad2 = new Gamepad();
 
-
     private IMU imu;
 
     private boolean fieldCentric = false;
-
-
 
     private void mecanumDrive(double botHeading)
     {
@@ -35,34 +32,35 @@ public class GalaxyTeleOp extends OpMode
         float y = -gamepad1.left_stick_y;
         float x = gamepad1.left_stick_x * 1.1f;
         float rx = gamepad1.right_stick_x;
-        if(currentGamepad1.right_bumper && previousGamepad1.right_bumper)
+
+        if(currentGamepad1.right_bumper)
         {
             LIMIT_SPEED = 0.375f;
         }
 
-        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+        // If you want field-centric, use rotX and rotY instead of x and y
+        // double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+        // double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
 
         double frontLeftPower = (y + x + rx) / denominator * robot.driveDir;
-
         double backLeftPower = (y - x + rx) / denominator * robot.driveDir;
-
         double frontRightPower = (y - x - rx) / denominator * robot.driveDir;
-
         double backRightPower = (y + x - rx) / denominator * robot.driveDir;
 
         robot.drive(frontRightPower * LIMIT_SPEED, frontLeftPower * LIMIT_SPEED,
                 backRightPower * LIMIT_SPEED, backLeftPower * LIMIT_SPEED);
-        telemetry.addData("leftFrontPower", frontLeftPower);
-        telemetry.addData("leftBackPower", backLeftPower);
-        telemetry.addData("rightFrontPower", frontRightPower);
-        telemetry.addData("rightBackPower", backRightPower);
+
+        telemetry.addData("leftFrontPower", frontLeftPower * LIMIT_SPEED);
+        telemetry.addData("leftBackPower", backLeftPower * LIMIT_SPEED);
+        telemetry.addData("rightFrontPower", frontRightPower * LIMIT_SPEED);
+        telemetry.addData("rightBackPower", backRightPower * LIMIT_SPEED);
         telemetry.addData("y", y);
         telemetry.addData("x", x);
         telemetry.addData("rx", rx);
         telemetry.addData("heading", botHeading);
+        telemetry.update();
     }
 
     private void copyGamepad() throws RobotCoreException
@@ -100,11 +98,13 @@ public class GalaxyTeleOp extends OpMode
         } catch (RobotCoreException e) {
             e.printStackTrace();
         }
-        if (currentGamepad1.touchpad && !currentGamepad1.touchpad)
+
+        // Fixed: was checking currentGamepad1.touchpad twice
+        if (currentGamepad1.touchpad && !previousGamepad1.touchpad)
             robot.driveDir *= -1;
+
         double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
         // robot.updateSense();
         mecanumDrive(botHeading);
-//
     }
 }
